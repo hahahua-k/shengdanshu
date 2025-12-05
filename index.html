@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极致土星粒子系统 - 超大缩放版</title>
+    <style>
+        /* 样式保持不变 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(ellipse at center, #0a0a1a 0%, #000005 100%);
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .header {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            text-align: left;
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 300;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #ffb347, #ffcc33, #ffdd99);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(255, 179, 71, 0.5);
+            letter-spacing: 1.5px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #aaa;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            pointer-events: auto;
+            z-index: 11;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 179, 71, 0.3);
+            color: #ffcc33;
+            padding: 14px 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+            .btn:hover {
+                background: rgba(255, 255, 255, 0.15);
+                transform: translateY(-3px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+                border-color: rgba(255, 179, 71, 0.6);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+            .btn.fullscreen {
+                background: rgba(255, 179, 71, 0.15);
+                border-color: rgba(255, 179, 71, 0.5);
+            }
+
+            .btn.camera {
+                background: rgba(100, 150, 255, 0.15);
+                border-color: rgba(100, 150, 255, 0.5);
+            }
+
+        .gesture-status {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 15px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            pointer-events: none;
+            min-width: 200px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+
+            .gesture-status h3 {
+                font-size: 0.9rem;
+                margin-bottom: 8px;
+                color: #ffcc33;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-weight: 600;
+            }
+
+            .gesture-status p {
+                font-size: 0.9rem;
+                color: #ddd;
+            }
+
+        .gesture-visual {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .gesture-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ffb347, #ffcc33);
+            width: 50%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        #video-container {
+            position: absolute;
+            bottom: 30px;
+            right: 25px;
+            width: 200px;
+            height: 150px;
+            border-radius: 12px;
+            overflow: hidden;
+            opacity: 0.85;
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            pointer-events: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            z-index: 11;
+            display: none;
+        }
+
+            #video-container.active {
+                display: block;
+            }
+
+            #video-container:hover {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .saturn-data {
+            position: absolute;
+            top: 120px;
+            right: 25px;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            pointer-events: none;
+            min-width: 200px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+
+            .saturn-data h3 {
+                font-size: 0.95rem;
+                margin-bottom: 15px;
+                color: #ffcc33;
+                text-align: center;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-weight: 600;
+            }
+
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .data-label {
+            color: #aaa;
+        }
+
+        .data-value {
+            color: #ffdd99;
+            font-weight: 500;
+        }
+
+        .effects-info {
+            position: absolute;
+            bottom: 200px;
+            left: 25px;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            pointer-events: none;
+            max-width: 280px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+
+            .effects-info h3 {
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+                color: #ffcc33;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-weight: 600;
+            }
+
+            .effects-info p {
+                font-size: 0.85rem;
+                color: #ccc;
+                line-height: 1.5;
+            }
+
+        .chaos-indicator {
+            position: absolute;
+            top: 200px;
+            right: 25px;
+            background: rgba(255, 100, 50, 0.2);
+            padding: 12px 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 100, 50, 0.5);
+            pointer-events: none;
+            font-size: 0.9rem;
+            color: #ff9966;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            z-index: 11;
+            display: none;
+        }
+
+            .chaos-indicator.active {
+                display: block;
+                animation: pulse 1.5s infinite;
+            }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 100, 50, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 100, 50, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 100, 50, 0);
+            }
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: #ffcc33;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 179, 71, 0.3);
+            border-top: 3px solid #ffcc33;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .particle-stats {
+            position: absolute;
+            bottom: 100px;
+            left: 25px;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 12px 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            pointer-events: none;
+            font-size: 0.9rem;
+            color: #ddd;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+
+        .gpu-stats {
+            position: absolute;
+            bottom: 140px;
+            left: 25px;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 12px 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            pointer-events: none;
+            font-size: 0.9rem;
+            color: #aaa;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            .subtitle {
+                font-size: 0.8rem;
+                max-width: 200px;
+            }
+
+            #video-container {
+                width: 150px;
+                height: 112px;
+                bottom: 100px;
+            }
+
+            .saturn-data {
+                top: 150px;
+                min-width: 180px;
+                padding: 15px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 220px;
+                justify-content: center;
+                padding: 12px 20px;
+            }
+
+            .gesture-status {
+                min-width: 180px;
+            }
+
+            .effects-info {
+                max-width: 200px;
+                bottom: 350px;
+            }
+        }
+
+        .video-toggle {
+            position: absolute;
+            bottom: 30px;
+            right: 25px;
+            width: 40px;
+            height: 40px;
+            background: rgba(100, 150, 255, 0.2);
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 12;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+            .video-toggle:hover {
+                background: rgba(100, 150, 255, 0.3);
+                transform: scale(1.1);
+            }
+
+            .video-toggle svg {
+                width: 20px;
+                height: 20px;
+                stroke: #fff;
+            }
+
+        .performance-controls {
+            position: absolute;
+            bottom: 180px;
+            left: 25px;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            pointer-events: auto;
+            max-width: 250px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+
+            .performance-controls h3 {
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+                color: #ffcc33;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-weight: 600;
+            }
+
+        .performance-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .slider-value {
+            color: #ffcc33;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #ffcc33;
+                cursor: pointer;
+                box-shadow: 0 0 10px rgba(255, 204, 51, 0.5);
+            }
+
+        .particle-type-toggle {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .type-toggle-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            border-radius: 6px;
+            color: #aaa;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+            .type-toggle-btn.active {
+                background: rgba(255, 179, 71, 0.15);
+                border-color: rgba(255, 179, 71, 0.5);
+                color: #ffcc33;
+            }
+
+        .render-mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .mode-toggle-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            border-radius: 6px;
+            color: #aaa;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+            .mode-toggle-btn.active {
+                background: rgba(100, 150, 255, 0.15);
+                border-color: rgba(100, 150, 255, 0.5);
+                color: #88aaff;
+            }
+
+        .scale-display {
+            position: absolute;
+            top: 180px;
+            right: 25px;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 12px 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 179, 71, 0.2);
+            pointer-events: none;
+            font-size: 0.9rem;
+            color: #ddd;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 11;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.0/dist/hand-pose-detection.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container"></div>
+
+        <div id="ui">
+            <div class="header">
+                <h1>ULTIMATE SATURN</h1>
+                <p class="subtitle">2000万粒子系统 | 超大缩放比例 | 高级混沌效果</p>
+            </div>
+
+            <div class="gesture-status">
+                <h3>手势控制</h3>
+                <p id="gesture-text">初始化摄像头...</p>
+                <div class="gesture-visual">
+                    <div class="gesture-bar" id="gesture-bar"></div>
+                </div>
+            </div>
+
+            <div class="saturn-data">
+                <h3>土星参数</h3>
+                <div class="data-item">
+                    <span class="data-label">粒子总数:</span>
+                    <span class="data-value" id="particle-count">0</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">核心半径:</span>
+                    <span class="data-value">3.0 AU</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">光环半径:</span>
+                    <span class="data-value">4.0-16.0 AU</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">混沌强度:</span>
+                    <span class="data-value" id="chaos-level">0%</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">GPU负载:</span>
+                    <span class="data-value" id="gpu-load">0%</span>
+                </div>
+            </div>
+
+            <div class="scale-display">
+                缩放比例: <span id="scale-value">1.0x</span>
+            </div>
+
+            <div class="particle-stats">
+                帧率: <span id="fps-counter">0</span> FPS
+            </div>
+
+            <div class="gpu-stats">
+                渲染时间: <span id="render-stats">0</span> ms
+            </div>
+
+            <div class="effects-info">
+                <h3>超大缩放</h3>
+                <p>支持从0.3倍到15倍超大范围缩放，多重混沌效应，极致粒子细节。</p>
+            </div>
+
+            <div class="performance-controls">
+                <h3>性能控制</h3>
+                <div class="slider-label">
+                    <span>粒子密度</span>
+                    <span class="slider-value" id="density-value">30%</span>
+                </div>
+                <input type="range" min="10" max="200" value="30" class="performance-slider" id="density-slider">
+
+                <div class="slider-label">
+                    <span>更新速度</span>
+                    <span class="slider-value" id="update-value">100%</span>
+                </div>
+                <input type="range" min="10" max="200" value="100" class="performance-slider" id="update-slider">
+
+                <div class="slider-label">
+                    <span>渲染质量</span>
+                    <span class="slider-value" id="quality-value">高</span>
+                </div>
+                <input type="range" min="1" max="3" value="3" class="performance-slider" id="quality-slider">
+
+                <div class="render-mode-toggle">
+                    <div class="mode-toggle-btn active" id="mode-shader">着色器</div>
+                    <div class="mode-toggle-btn" id="mode-hybrid">混合模式</div>
+                    <div class="mode-toggle-btn" id="mode-optimized">极致模式</div>
+                </div>
+
+                <div class="particle-type-toggle">
+                    <div class="type-toggle-btn active" id="type-standard">标准</div>
+                    <div class="type-toggle-btn" id="type-glow">发光</div>
+                    <div class="type-toggle-btn" id="type-trail">拖尾</div>
+                </div>
+            </div>
+
+            <div class="chaos-indicator" id="chaos-indicator">
+                ⚡ 混沌效应激活
+            </div>
+
+            <div id="video-container" class="hidden">
+                <video id="video" autoplay playsinline></video>
+            </div>
+
+            <div class="video-toggle" id="video-toggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 7l-7 5 7 5V7z"></path>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+            </div>
+
+            <div class="controls">
+                <button class="btn fullscreen" id="fullscreen-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                    </svg>
+                    全屏沉浸
+                </button>
+                <button class="btn" id="reset-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    重置系统
+                </button>
+                <button class="btn camera" id="camera-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    摄像头
+                </button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            初始化极致粒子系统...
+        </div>
+    </div>
+
+    <script>
+        // 极致土星粒子系统 - 超大缩放比例版
+        class UltimateSaturnParticleSystem {
+            constructor() {
+                // 系统变量
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.particles = null;
+                this.ringParticles = [];
+                this.ringLayers = 6;
+
+                // 2000万粒子配置
+                this.baseParticleCount = 2000000;
+                this.baseRingParticleCounts = [4000000, 3500000, 3000000, 2500000, 2000000, 1500000];
+                this.particleCount = this.baseParticleCount * 0.3;
+                this.ringParticleCounts = this.baseRingParticleCounts.map(count => Math.floor(count * 0.3));
+                this.totalParticles = 0;
+
+                // 性能优化配置
+                this.densityMultiplier = 0.3;
+                this.updateMultiplier = 1.0;
+                this.qualityLevel = 3;
+                this.particleType = 'standard';
+                this.renderMode = 'optimized';
+
+                // 分批渲染配置
+                this.batchSize = 500000;
+                this.currentBatch = 0;
+                this.totalBatches = 0;
+
+                // 手势检测变量
+                this.handDetector = null;
+                this.video = null;
+                this.handDetected = false;
+                this.handGesture = 0.5;
+                this.cameraEnabled = false;
+
+                // 动画变量
+                this.animationId = null;
+                this.clock = new THREE.Clock();
+                this.time = 0;
+                this.lastFrameTime = 0;
+                this.frameCount = 0;
+                this.fps = 0;
+                this.renderTime = 0;
+                this.gpuLoad = 0;
+                this.frameTime = 0;
+
+                // 超大缩放比例配置
+                this.saturnScale = 1.0;
+                this.targetScale = 1.0;
+                this.saturnBrightness = 0.8;
+                this.chaosEffect = 0.0;
+                this.chaosIntensity = 0.0;
+                this.isExploded = false;
+                this.autoMode = false;
+                this.autoTimer = 0;
+
+                // 新的缩放参数 - 支持更大范围
+                this.minScale = 0.3;    // 最小缩放比例
+                this.maxScale = 15.0;   // 最大缩放比例（显著增大）
+                this.scaleRange = this.maxScale - this.minScale;
+
+                // 多级混沌效果
+                this.chaosLevels = {
+                    turbulence: 0.0,
+                    vortex: 0.0,
+                    resonance: 0.0,
+                    explosion: 0.0,
+                    implosion: 0.0,
+                    noiseScale: 1.0,
+                    phaseShift: 0.0
+                };
+
+                // 优化后的粒子物理参数
+                this.particlePhysics = {
+                    coreRadius: 3.0,
+                    ringInnerRadius: 4.0,
+                    ringOuterRadius: 16.0, // 扩大光环范围
+                    orbitalSpeed: 0.15,
+                    keplerFactor: 1.8,
+                    brownianIntensity: 0.0,
+                    glowIntensity: 1.8,
+                    pulseSpeed: 0.4,
+                    interactionForce: 0.001
+                };
+
+                // 初始化
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // 1. 立即初始化Three.js场景
+                    this.initScene();
+
+                    // 2. 创建极致土星粒子系统
+                    this.createUltimateSaturnParticleSystem();
+
+                    // 3. 立即开始动画循环
+                    this.animate();
+
+                    // 4. 立即隐藏加载界面
+                    setTimeout(() => {
+                        document.getElementById('loading').classList.add('hidden');
+                    }, 800);
+
+                    // 5. 开始FPS计数
+                    this.startFPSCounter();
+
+                    // 6. 绑定控制事件
+                    this.bindControls();
+
+                    // 7. 异步初始化摄像头和手势检测
+                    this.initCameraAndHandDetection().catch(error => {
+                        console.log("摄像头初始化失败，使用鼠标控制:", error);
+                        document.getElementById('gesture-text').textContent = "使用鼠标控制 - 上下移动";
+                        this.setupMouseControls();
+                    });
+
+                    // 8. 更新性能显示
+                    this.updatePerformanceDisplay();
+
+                } catch (error) {
+                    console.error("初始化错误:", error);
+                    document.getElementById('loading').innerHTML =
+                        '<div style="color: #ff9966; margin-top: 20px;">初始化失败，请刷新页面重试</div>';
+                }
+            }
+
+            initScene() {
+                // 创建场景
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x050510);
+
+                // 创建相机 - 优化视角，支持更大缩放范围
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000); // 增加far平面距离
+                this.camera.position.set(25, 15, 40); // 稍微远离
+                this.camera.lookAt(0, 0, 0);
+
+                // 创建渲染器 - 极致性能优化
+                this.renderer = new THREE.WebGLRenderer({
+                    antialias: this.qualityLevel >= 3,
+                    alpha: true,
+                    powerPreference: "high-performance",
+                    logarithmicDepthBuffer: true,
+                    precision: 'highp'
+                });
+
+                this.renderer.setSize(width, height);
+                this.applyQualitySettings();
+                this.renderer.shadowMap.enabled = false;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.5;
+                this.renderer.setClearColor(0x050510, 1);
+
+                // 添加到DOM
+                const container = document.getElementById('canvas-container');
+                container.appendChild(this.renderer.domElement);
+
+                // 优化光照系统
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffdd99, 1.2);
+                directionalLight.position.set(35, 45, 25);
+                this.scene.add(directionalLight);
+
+                const pointLight = new THREE.PointLight(0xffb347, 1.5, 500); // 增加光照范围
+                pointLight.position.set(15, 20, 15);
+                this.scene.add(pointLight);
+
+                // 创建优化星场背景
+                this.createOptimizedStarfield();
+
+                // 窗口大小调整事件
+                window.addEventListener('resize', () => this.onWindowResize());
+            }
+
+            async initCameraAndHandDetection() {
+                this.video = document.getElementById('video');
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 640, height: 480 }
+                    });
+
+                    this.video.srcObject = stream;
+                    await this.video.play();
+
+                    // 初始化手势检测
+                    await this.initHandPoseDetection();
+
+                    // 更新手势状态文本
+                    document.getElementById('gesture-text').textContent = "摄像头就绪 - 张开/合拢手掌";
+
+                } catch (error) {
+                    console.error("摄像头访问失败:", error);
+                    throw error;
+                }
+            }
+
+            async initHandPoseDetection() {
+                try {
+                    const model = handPoseDetection.SupportedModels.MediaPipeHands;
+                    const detectorConfig = {
+                        runtime: 'mediapipe',
+                        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+                        modelType: 'full'
+                    };
+
+                    this.handDetector = await handPoseDetection.createDetector(model, detectorConfig);
+
+                    // 开始手势检测循环
+                    this.detectHands();
+
+                } catch (error) {
+                    console.error("手势检测初始化失败:", error);
+                    throw error;
+                }
+            }
+
+            async detectHands() {
+                if (!this.handDetector || !this.video) return;
+
+                try {
+                    const hands = await this.handDetector.estimateHands(this.video);
+
+                    if (hands.length > 0) {
+                        const hand = hands[0];
+                        this.handDetected = true;
+
+                        // 计算手掌张开程度
+                        const keypoints = hand.keypoints;
+                        const thumbTip = keypoints.find(k => k.name === 'thumb_tip');
+                        const indexTip = keypoints.find(k => k.name === 'index_finger_tip');
+
+                        if (thumbTip && indexTip) {
+                            const dx = thumbTip.x - indexTip.x;
+                            const dy = thumbTip.y - indexTip.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            // 归一化到0-1范围
+                            this.handGesture = Math.min(1, Math.max(0, (distance - 30) / 100));
+
+                            // 更新手势状态文本
+                            document.getElementById('gesture-text').textContent =
+                                `手掌张开度: ${Math.round(this.handGesture * 100)}%`;
+
+                            // 更新手势可视化条
+                            document.getElementById('gesture-bar').style.width = `${this.handGesture * 100}%`;
+                        }
+                    } else {
+                        this.handDetected = false;
+                        document.getElementById('gesture-text').textContent = "未检测到手掌";
+                    }
+                } catch (error) {
+                    console.error("手势检测失败:", error);
+                }
+
+                // 继续下一帧检测
+                setTimeout(() => this.detectHands(), 100);
+            }
+
+            setupMouseControls() {
+                let mouseY = 0.5;
+
+                document.addEventListener('mousemove', (e) => {
+                    // 将鼠标Y位置映射到手势值
+                    mouseY = 1 - (e.clientY / window.innerHeight);
+                    this.handGesture = mouseY;
+                    this.handDetected = true;
+
+                    document.getElementById('gesture-text').textContent =
+                        `鼠标控制: ${Math.round(this.handGesture * 100)}%`;
+
+                    // 更新手势可视化条
+                    document.getElementById('gesture-bar').style.width = `${this.handGesture * 100}%`;
+                });
+
+                document.addEventListener('wheel', (e) => {
+                    // 鼠标滚轮控制缩放 - 支持更大范围
+                    const delta = -e.deltaY * 0.0005; // 减小增量，使缩放更平滑
+                    this.targetScale = Math.max(this.minScale, Math.min(this.maxScale, this.targetScale * (1 + delta)));
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mouseleave', () => {
+                    this.handDetected = false;
+                });
+            }
+
+            createUltimateSaturnParticleSystem() {
+                // 根据渲染模式创建粒子系统
+                switch (this.renderMode) {
+                    case 'shader':
+                        this.createShaderBasedParticleSystem();
+                        break;
+                    case 'hybrid':
+                        this.createHybridParticleSystem();
+                        break;
+                    case 'optimized':
+                    default:
+                        this.createOptimizedParticleSystem();
+                }
+
+                this.calculateTotalParticles();
+                document.getElementById('particle-count').textContent =
+                    this.totalParticles.toLocaleString();
+            }
+
+            createOptimizedParticleSystem() {
+                console.log("创建优化粒子系统...");
+
+                // 清理现有粒子
+                if (this.particles) {
+                    this.scene.remove(this.particles);
+                    if (this.particles.geometry) this.particles.geometry.dispose();
+                    if (this.particles.material) this.particles.material.dispose();
+                }
+
+                this.ringParticles.forEach(ring => {
+                    this.scene.remove(ring);
+                    if (ring.geometry) ring.geometry.dispose();
+                    if (ring.material) ring.material.dispose();
+                });
+                this.ringParticles = [];
+
+                // 创建核心粒子（使用批处理优化）
+                this.createOptimizedCoreParticles();
+
+                // 创建光环粒子（使用批处理优化）
+                this.createOptimizedRingParticles();
+
+                // 设置分批渲染
+                this.setupBatchRendering();
+            }
+
+            createOptimizedCoreParticles() {
+                const particleCount = this.particleCount;
+                console.log(`创建核心粒子: ${particleCount.toLocaleString()}`);
+
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                const velocities = new Float32Array(particleCount * 3);
+                const originalPositions = new Float32Array(particleCount * 3);
+                const colorIndices = new Float32Array(particleCount);
+
+                // 土星核心颜色
+                const coreColor1 = new THREE.Color(0xD4A76A);
+                const coreColor2 = new THREE.Color(0xFFD166);
+                const coreColor3 = new THREE.Color(0xFF9A76);
+
+                // 分批生成粒子，避免长时间阻塞
+                const batchCount = Math.ceil(particleCount / 10000);
+                let currentIndex = 0;
+
+                const generateBatch = (batchIndex) => {
+                    const start = batchIndex * 10000;
+                    const end = Math.min(start + 10000, particleCount);
+
+                    for (let i = start; i < end; i++) {
+                        const i3 = i * 3;
+
+                        // 球体分布
+                        const radius = this.particlePhysics.coreRadius * (0.95 + Math.random() * 0.1);
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.acos(2 * Math.random() - 1);
+
+                        positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                        positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                        positions[i3 + 2] = radius * Math.cos(phi);
+
+                        // 存储原始位置
+                        originalPositions[i3] = positions[i3];
+                        originalPositions[i3 + 1] = positions[i3 + 1];
+                        originalPositions[i3 + 2] = positions[i3 + 2];
+
+                        // 颜色渐变
+                        const colorMix = Math.random();
+                        let color;
+                        if (colorMix < 0.5) {
+                            color = new THREE.Color().lerpColors(coreColor1, coreColor2, colorMix * 2);
+                        } else {
+                            color = new THREE.Color().lerpColors(coreColor2, coreColor3, (colorMix - 0.5) * 2);
+                        }
+
+                        // 根据位置调整颜色亮度
+                        const distanceFromCenter = Math.sqrt(
+                            positions[i3] * positions[i3] +
+                            positions[i3 + 1] * positions[i3 + 1] +
+                            positions[i3 + 2] * positions[i3 + 2]
+                        );
+                        const distanceFactor = distanceFromCenter / this.particlePhysics.coreRadius;
+                        const brightness = 0.8 + distanceFactor * 0.4;
+
+                        colors[i3] = color.r * brightness;
+                        colors[i3 + 1] = color.g * brightness;
+                        colors[i3 + 2] = color.b * brightness;
+
+                        // 存储颜色索引
+                        colorIndices[i] = Math.random();
+
+                        // 粒子大小 - 根据缩放范围调整
+                        sizes[i] = Math.random() * 0.02 + 0.008; // 减小粒子大小以支持更大缩放
+
+                        // 初始速度
+                        velocities[i3] = -positions[i3 + 2] * 0.006;
+                        velocities[i3 + 1] = 0;
+                        velocities[i3 + 2] = positions[i3] * 0.006;
+                    }
+
+                    currentIndex++;
+
+                    // 如果还有批次，继续生成
+                    if (batchIndex < batchCount - 1) {
+                        setTimeout(() => generateBatch(batchIndex + 1), 0);
+                    } else {
+                        // 所有批次完成，设置几何体
+                        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+                        // 存储额外数据
+                        geometry.userData.velocities = velocities;
+                        geometry.userData.originalPositions = originalPositions;
+                        geometry.userData.colorIndices = colorIndices;
+
+                        // 创建材质 - 针对大缩放优化
+                        let coreMaterial;
+                        switch (this.particleType) {
+                            case 'glow':
+                                coreMaterial = new THREE.PointsMaterial({
+                                    size: 0.03,
+                                    vertexColors: true,
+                                    transparent: true,
+                                    opacity: 1.0,
+                                    sizeAttenuation: true,
+                                    blending: THREE.AdditiveBlending,
+                                    depthWrite: false
+                                });
+                                break;
+                            case 'trail':
+                                coreMaterial = new THREE.PointsMaterial({
+                                    size: 0.04,
+                                    vertexColors: true,
+                                    transparent: true,
+                                    opacity: 0.8,
+                                    sizeAttenuation: true,
+                                    blending: THREE.NormalBlending,
+                                    depthWrite: true
+                                });
+                                break;
+                            default:
+                                coreMaterial = new THREE.PointsMaterial({
+                                    size: 0.03,
+                                    vertexColors: true,
+                                    transparent: true,
+                                    opacity: 0.9,
+                                    sizeAttenuation: true,
+                                    blending: THREE.NormalBlending,
+                                    depthWrite: true
+                                });
+                                break;
+                        }
+
+                        // 创建粒子系统
+                        this.particles = new THREE.Points(geometry, coreMaterial);
+                        this.scene.add(this.particles);
+
+                        console.log("核心粒子创建完成");
+                    }
+                };
+
+                // 开始第一批
+                generateBatch(0);
+            }
+
+            createOptimizedRingParticles() {
+                console.log("创建光环粒子系统...");
+
+                // 分批创建环层
+                const createRingLayer = (layer) => {
+                    const particleCount = this.ringParticleCounts[layer];
+
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array(particleCount * 3);
+                    const colors = new Float32Array(particleCount * 3);
+                    const sizes = new Float32Array(particleCount);
+                    const orbitalData = new Float32Array(particleCount * 2);
+                    const velocities = new Float32Array(particleCount * 3);
+                    const originalPositions = new Float32Array(particleCount * 3);
+
+                    // 光环参数
+                    const ringStart = this.particlePhysics.ringInnerRadius +
+                        (layer * (this.particlePhysics.ringOuterRadius - this.particlePhysics.ringInnerRadius) / this.ringLayers);
+                    const ringEnd = ringStart +
+                        ((this.particlePhysics.ringOuterRadius - this.particlePhysics.ringInnerRadius) / this.ringLayers) * 0.85;
+
+                    // 每层光环颜色
+                    let ringColor1, ringColor2;
+                    switch (layer) {
+                        case 0:
+                            ringColor1 = new THREE.Color(0xFFD700);
+                            ringColor2 = new THREE.Color(0xFFA500);
+                            break;
+                        case 1:
+                            ringColor1 = new THREE.Color(0xFFA500);
+                            ringColor2 = new THREE.Color(0xFF6347);
+                            break;
+                        case 2:
+                            ringColor1 = new THREE.Color(0xFF6347);
+                            ringColor2 = new THREE.Color(0x8B4513);
+                            break;
+                        case 3:
+                            ringColor1 = new THREE.Color(0x8B4513);
+                            ringColor2 = new THREE.Color(0x696969);
+                            break;
+                        case 4:
+                            ringColor1 = new THREE.Color(0x696969);
+                            ringColor2 = new THREE.Color(0x404040);
+                            break;
+                        case 5:
+                            ringColor1 = new THREE.Color(0x404040);
+                            ringColor2 = new THREE.Color(0x202020);
+                            break;
+                    }
+
+                    // 分批生成光环粒子
+                    const batchCount = Math.ceil(particleCount / 10000);
+
+                    const generateRingBatch = (batchIndex) => {
+                        const start = batchIndex * 10000;
+                        const end = Math.min(start + 10000, particleCount);
+
+                        for (let i = start; i < end; i++) {
+                            const i3 = i * 3;
+                            const i2 = i * 2;
+
+                            const radius = ringStart + Math.random() * (ringEnd - ringStart);
+                            const angle = Math.random() * Math.PI * 2;
+                            const height = (Math.random() - 0.5) * 0.02 * (1 + layer * 0.1); // 减小高度变化
+
+                            positions[i3] = radius * Math.cos(angle);
+                            positions[i3 + 1] = height;
+                            positions[i3 + 2] = radius * Math.sin(angle);
+
+                            // 存储原始位置
+                            originalPositions[i3] = positions[i3];
+                            originalPositions[i3 + 1] = positions[i3 + 1];
+                            originalPositions[i3 + 2] = positions[i3 + 2];
+
+                            // 轨道数据
+                            orbitalData[i2] = radius;
+                            orbitalData[i2 + 1] = angle;
+
+                            // 颜色渐变
+                            const radiusRatio = (radius - ringStart) / (ringEnd - ringStart);
+                            const color = new THREE.Color().lerpColors(ringColor1, ringColor2, radiusRatio);
+
+                            // 根据半径调整亮度
+                            const brightness = 1.0 + radiusRatio * 0.4;
+
+                            colors[i3] = color.r * brightness;
+                            colors[i3 + 1] = color.g * brightness;
+                            colors[i3 + 2] = color.b * brightness;
+
+                            // 粒子大小 - 根据缩放范围调整
+                            sizes[i] = 0.008 + Math.random() * 0.015; // 减小粒子大小
+
+                            // 轨道速度（开普勒定律）
+                            const keplerSpeed = this.particlePhysics.orbitalSpeed /
+                                Math.sqrt(radius / this.particlePhysics.ringInnerRadius);
+                            velocities[i3] = -positions[i3 + 2] * keplerSpeed * (0.7 + layer * 0.1);
+                            velocities[i3 + 1] = 0;
+                            velocities[i3 + 2] = positions[i3] * keplerSpeed * (0.7 + layer * 0.1);
+                        }
+
+                        // 如果还有批次，继续生成
+                        if (batchIndex < batchCount - 1) {
+                            setTimeout(() => generateRingBatch(batchIndex + 1), 0);
+                        } else {
+                            // 所有批次完成，设置几何体
+                            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+                            // 存储轨道数据和速度
+                            geometry.userData.orbitalData = orbitalData;
+                            geometry.userData.velocities = velocities;
+                            geometry.userData.originalPositions = originalPositions;
+                            geometry.userData.layer = layer;
+
+                            // 创建材质 - 针对大缩放优化
+                            let ringMaterial;
+                            switch (this.particleType) {
+                                case 'glow':
+                                    ringMaterial = new THREE.PointsMaterial({
+                                        size: 0.02,
+                                        vertexColors: true,
+                                        transparent: true,
+                                        opacity: 0.9,
+                                        sizeAttenuation: true,
+                                        blending: THREE.AdditiveBlending,
+                                        depthWrite: false
+                                    });
+                                    break;
+                                case 'trail':
+                                    ringMaterial = new THREE.PointsMaterial({
+                                        size: 0.025,
+                                        vertexColors: true,
+                                        transparent: true,
+                                        opacity: 0.7,
+                                        sizeAttenuation: true,
+                                        blending: THREE.NormalBlending,
+                                        depthWrite: true
+                                    });
+                                    break;
+                                default:
+                                    ringMaterial = new THREE.PointsMaterial({
+                                        size: 0.02,
+                                        vertexColors: true,
+                                        transparent: true,
+                                        opacity: 0.8,
+                                        sizeAttenuation: true,
+                                        blending: THREE.NormalBlending,
+                                        depthWrite: true
+                                    });
+                                    break;
+                            }
+
+                            // 创建粒子系统
+                            const ringParticleSystem = new THREE.Points(geometry, ringMaterial);
+                            ringParticleSystem.rotation.x = Math.PI / 6;
+
+                            this.scene.add(ringParticleSystem);
+                            this.ringParticles.push(ringParticleSystem);
+
+                            console.log(`光环层 ${layer} 创建完成: ${particleCount.toLocaleString()} 粒子`);
+
+                            // 继续下一层
+                            if (layer < this.ringLayers - 1) {
+                                setTimeout(() => createRingLayer(layer + 1), 100);
+                            } else {
+                                console.log("所有光环层创建完成");
+                            }
+                        }
+                    };
+
+                    // 开始第一批
+                    generateRingBatch(0);
+                };
+
+                // 开始第一层
+                createRingLayer(0);
+            }
+
+            setupBatchRendering() {
+                // 分批渲染配置
+                this.totalBatches = Math.ceil(this.totalParticles / this.batchSize);
+                this.currentBatch = 0;
+
+                console.log(`总粒子数: ${this.totalParticles.toLocaleString()}, 批次: ${this.totalBatches}`);
+            }
+
+            createOptimizedStarfield() {
+                const starCount = 10000; // 增加星星数量
+                const positions = new Float32Array(starCount * 3);
+                const colors = new Float32Array(starCount * 3);
+                const sizes = new Float32Array(starCount);
+
+                for (let i = 0; i < starCount * 3; i += 3) {
+                    // 球面分布，更远的距离
+                    const radius = 800 + Math.random() * 2500;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+
+                    positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i + 2] = radius * Math.cos(phi);
+
+                    // 星星颜色
+                    const color = new THREE.Color();
+                    const hue = 0.1 + Math.random() * 0.1;
+                    const saturation = 0.1 + Math.random() * 0.2;
+                    const lightness = 0.5 + Math.random() * 0.5;
+                    color.setHSL(hue, saturation, lightness);
+
+                    colors[i] = color.r;
+                    colors[i + 1] = color.g;
+                    colors[i + 2] = color.b;
+
+                    sizes[i / 3] = Math.random() * 0.4 + 0.1; // 稍微增大星星
+                }
+
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+                const material = new THREE.PointsMaterial({
+                    size: 0.4,
+                    vertexColors: true,
+                    transparent: true,
+                    sizeAttenuation: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+
+                const stars = new THREE.Points(geometry, material);
+                this.scene.add(stars);
+            }
+
+            calculateTotalParticles() {
+                this.totalParticles = this.particleCount;
+                this.ringParticleCounts.forEach(count => {
+                    this.totalParticles += count;
+                });
+            }
+
+            updateParticles() {
+                if (!this.particles || this.ringParticles.length === 0) return;
+
+                const deltaTime = Math.min(this.clock.getDelta(), 0.033);
+                this.time += deltaTime;
+
+                // 自动演示模式
+                if (this.autoMode) {
+                    this.autoTimer += deltaTime;
+                    // 在minScale到maxScale之间循环
+                    this.targetScale = this.minScale + (Math.sin(this.autoTimer * 0.1) * 0.5 + 0.5) * (this.maxScale - this.minScale);
+                    this.handDetected = true;
+                } else if (this.handDetected) {
+                    // 使用手势值控制超大范围缩放
+                    this.targetScale = this.minScale + this.handGesture * this.scaleRange;
+                }
+
+                // 平滑缩放过渡
+                const scaleDiff = this.targetScale - this.saturnScale;
+                const transitionSpeed = Math.min(0.1, Math.abs(scaleDiff) * 0.05 + 0.02);
+                this.saturnScale += scaleDiff * transitionSpeed;
+
+                // 更新显示缩放值
+                document.getElementById('scale-value').textContent = this.saturnScale.toFixed(1) + "x";
+
+                // 根据缩放级别调整亮度和其他参数
+                this.updateScaleBasedParameters();
+
+                // 多级混沌效果
+                this.updateMultiLevelChaosEffects(deltaTime);
+
+                // 记录更新开始时间
+                const updateStartTime = performance.now();
+
+                // 更新核心粒子（分批更新）
+                this.updateOptimizedCoreParticles(deltaTime);
+
+                // 更新所有环粒子（分批更新）
+                this.updateOptimizedRingParticles(deltaTime);
+
+                // 动态相机调整
+                this.updateDynamicCamera(deltaTime);
+
+                // 更新粒子材质参数
+                this.updateMaterialParameters();
+
+                // 计算渲染时间
+                this.renderTime = performance.now() - updateStartTime;
+                document.getElementById('render-stats').textContent = this.renderTime.toFixed(1);
+
+                // 估算GPU负载
+                this.gpuLoad = Math.min(100, (this.renderTime / 16) * 100);
+                document.getElementById('gpu-load').textContent = `${Math.round(this.gpuLoad)}%`;
+            }
+
+            updateScaleBasedParameters() {
+                // 根据缩放级别调整各种参数
+                const scaleRatio = (this.saturnScale - this.minScale) / this.scaleRange;
+
+                // 亮度调整 - 大缩放时更亮，小缩放时更暗
+                this.saturnBrightness = 0.4 + scaleRatio * 1.6;
+                this.saturnBrightness = Math.min(2.0, Math.max(0.2, this.saturnBrightness));
+
+                // 粒子大小缩放
+                const sizeMultiplier = 0.5 + scaleRatio * 1.5;
+
+                // 更新粒子材质大小
+                if (this.particles) {
+                    this.particles.material.size = 0.03 * sizeMultiplier;
+                }
+
+                // 更新光环粒子大小
+                this.ringParticles.forEach(ring => {
+                    ring.material.size = 0.02 * sizeMultiplier;
+                });
+            }
+
+            updateMultiLevelChaosEffects(deltaTime) {
+                // 多级混沌效果检测
+                const chaosThresholds = [
+                    { scale: 3.0, level: 1 },   // 轻度混沌
+                    { scale: 6.0, level: 2 },   // 中度混沌
+                    { scale: 9.0, level: 3 },   // 重度混沌
+                    { scale: 12.0, level: 4 }   // 极度混沌
+                ];
+
+                let newChaosLevel = 0;
+                for (let i = chaosThresholds.length - 1; i >= 0; i--) {
+                    if (this.saturnScale >= chaosThresholds[i].scale) {
+                        newChaosLevel = chaosThresholds[i].level;
+                        break;
+                    }
+                }
+
+                // 检测混沌状态变化
+                if (newChaosLevel > 0 && !this.isExploded) {
+                    this.isExploded = true;
+                    this.chaosEffect = 0.0;
+                    document.getElementById('chaos-indicator').classList.add('active');
+                    document.getElementById('chaos-indicator').textContent = `⚡ 混沌效应 ${newChaosLevel}级激活`;
+                } else if (newChaosLevel === 0 && this.isExploded) {
+                    this.isExploded = false;
+                    document.getElementById('chaos-indicator').classList.remove('active');
+                }
+
+                // 更新混沌强度
+                if (this.isExploded) {
+                    this.chaosEffect = Math.min(1.0, this.chaosEffect + deltaTime * 0.5);
+                    this.chaosIntensity = this.chaosEffect * newChaosLevel / 4;
+
+                    // 根据混沌级别调整参数
+                    this.chaosLevels.turbulence = Math.sin(this.time * 1.2) * 0.3 + 0.3;
+                    this.chaosLevels.vortex = Math.sin(this.time * 0.8) * 0.2 + 0.2;
+                    this.chaosLevels.resonance = Math.sin(this.time * 1.5) * 0.4 + 0.4;
+                    this.chaosLevels.explosion = newChaosLevel >= 3 ? Math.sin(this.time * 2.0) * 0.3 + 0.3 : 0;
+                    this.chaosLevels.implosion = newChaosLevel >= 4 ? Math.sin(this.time * 2.5) * 0.2 + 0.2 : 0;
+                    this.chaosLevels.phaseShift += deltaTime * (2 + newChaosLevel);
+                } else {
+                    this.chaosEffect = Math.max(0, this.chaosEffect - deltaTime * 0.3);
+                    this.chaosIntensity = this.chaosEffect;
+
+                    // 重置混沌参数
+                    this.chaosLevels.turbulence *= 0.95;
+                    this.chaosLevels.vortex *= 0.95;
+                    this.chaosLevels.resonance *= 0.95;
+                    this.chaosLevels.explosion *= 0.95;
+                    this.chaosLevels.implosion *= 0.95;
+                }
+
+                // 更新显示
+                document.getElementById('chaos-level').textContent = `${Math.round(this.chaosIntensity * 100)}%`;
+            }
+
+            updateOptimizedCoreParticles(deltaTime) {
+                if (!this.particles.geometry.attributes.position) return;
+
+                const positions = this.particles.geometry.attributes.position.array;
+                const velocities = this.particles.geometry.userData.velocities;
+                const originalPositions = this.particles.geometry.userData.originalPositions;
+                const colorIndices = this.particles.geometry.userData.colorIndices;
+                const colors = this.particles.geometry.attributes.color.array;
+
+                const particleCount = this.particleCount;
+                const updateStep = Math.max(1, Math.floor(10 / this.updateMultiplier));
+
+                // 使用时间戳确定更新批次
+                const batchIndex = Math.floor(this.time * 20) % 10;
+                const batchSize = Math.ceil(particleCount / 10);
+                const start = batchIndex * batchSize;
+                const end = Math.min(start + batchSize, particleCount);
+
+                for (let i = start; i < end; i += updateStep) {
+                    const i3 = i * 3;
+
+                    // 应用缩放
+                    const targetX = originalPositions[i3] * this.saturnScale;
+                    const targetY = originalPositions[i3 + 1] * this.saturnScale;
+                    const targetZ = originalPositions[i3 + 2] * this.saturnScale;
+
+                    // 平滑过渡到目标位置
+                    const transitionSpeed = this.chaosIntensity > 0 ? 0.12 : 0.06;
+                    positions[i3] += (targetX - positions[i3]) * transitionSpeed;
+                    positions[i3 + 1] += (targetY - positions[i3 + 1]) * transitionSpeed;
+                    positions[i3 + 2] += (targetZ - positions[i3 + 2]) * transitionSpeed;
+
+                    // 应用多级混沌效果
+                    if (this.chaosIntensity > 0) {
+                        // 基础湍流
+                        const turbulence = this.chaosIntensity * this.chaosLevels.turbulence;
+                        positions[i3] += Math.sin(this.time * 2.0 + colorIndices[i] * Math.PI) * turbulence;
+                        positions[i3 + 1] += Math.cos(this.time * 3.0 + colorIndices[i] * Math.PI) * turbulence;
+                        positions[i3 + 2] += Math.sin(this.time * 4.0 + colorIndices[i] * Math.PI) * turbulence;
+
+                        // 涡旋效果
+                        const vortexIntensity = this.chaosIntensity * this.chaosLevels.vortex * 0.1;
+                        const angle = Math.atan2(positions[i3 + 2], positions[i3]);
+                        positions[i3] += Math.cos(angle) * vortexIntensity;
+                        positions[i3 + 2] += Math.sin(angle) * vortexIntensity;
+
+                        // 共振效果
+                        const resonance = this.chaosIntensity * this.chaosLevels.resonance * 0.05;
+                        positions[i3] *= (1 + Math.sin(this.time * 5.0 + colorIndices[i]) * resonance);
+                        positions[i3 + 1] *= (1 + Math.cos(this.time * 6.0 + colorIndices[i]) * resonance);
+                        positions[i3 + 2] *= (1 + Math.sin(this.time * 7.0 + colorIndices[i]) * resonance);
+
+                        // 爆炸效果（高级混沌）
+                        if (this.chaosLevels.explosion > 0) {
+                            const explosionIntensity = this.chaosIntensity * this.chaosLevels.explosion * 0.15;
+                            const distance = Math.sqrt(positions[i3] * positions[i3] + positions[i3 + 1] * positions[i3 + 1] + positions[i3 + 2] * positions[i3 + 2]);
+                            positions[i3] += positions[i3] / distance * explosionIntensity;
+                            positions[i3 + 1] += positions[i3 + 1] / distance * explosionIntensity;
+                            positions[i3 + 2] += positions[i3 + 2] / distance * explosionIntensity;
+                        }
+
+                        // 额外速度
+                        positions[i3] += velocities[i3] * deltaTime * 15 * this.chaosIntensity;
+                        positions[i3 + 2] += velocities[i3 + 2] * deltaTime * 15 * this.chaosIntensity;
+                    } else {
+                        // 正常轨道运动
+                        positions[i3] += velocities[i3] * deltaTime * 6;
+                        positions[i3 + 2] += velocities[i3 + 2] * deltaTime * 6;
+
+                        // 保持粒子在球面上（缩放较大时减弱此约束）
+                        if (this.saturnScale < 8.0) {
+                            const radius = Math.sqrt(
+                                positions[i3] * positions[i3] +
+                                positions[i3 + 1] * positions[i3 + 1] +
+                                positions[i3 + 2] * positions[i3 + 2]
+                            );
+
+                            const scaleFactor = (this.particlePhysics.coreRadius * this.saturnScale) / radius;
+                            positions[i3] *= scaleFactor;
+                            positions[i3 + 1] *= scaleFactor;
+                            positions[i3 + 2] *= scaleFactor;
+                        }
+                    }
+
+                    // 更新颜色脉动
+                    if (i % 100 === 0) {
+                        const colorIndex = colorIndices[i];
+                        const pulse = Math.sin(this.time * 1.2 + colorIndex * Math.PI * 2) * 0.05 + 0.95;
+                        const brightness = this.saturnBrightness * pulse;
+
+                        colors[i3] = Math.min(1, colors[i3] * brightness);
+                        colors[i3 + 1] = Math.min(1, colors[i3 + 1] * brightness);
+                        colors[i3 + 2] = Math.min(1, colors[i3 + 2] * brightness);
+                    }
+                }
+
+                this.particles.geometry.attributes.position.needsUpdate = true;
+                this.particles.geometry.attributes.color.needsUpdate = true;
+            }
+
+            updateOptimizedRingParticles(deltaTime) {
+                // 分批更新环粒子
+                const batchIndex = Math.floor(this.time * 20) % this.ringLayers;
+
+                if (batchIndex < this.ringParticles.length) {
+                    this.updateOptimizedRingLayer(this.ringParticles[batchIndex], deltaTime, batchIndex);
+                }
+            }
+
+            updateOptimizedRingLayer(ringParticles, deltaTime, layerIndex) {
+                if (!ringParticles.geometry.attributes.position) return;
+
+                const positions = ringParticles.geometry.attributes.position.array;
+                const orbitalData = ringParticles.geometry.userData.orbitalData;
+                const velocities = ringParticles.geometry.userData.velocities;
+                const originalPositions = ringParticles.geometry.userData.originalPositions;
+                const colors = ringParticles.geometry.attributes.color.array;
+
+                const particleCount = this.ringParticleCounts[layerIndex];
+                const updateStep = Math.max(1, Math.floor(10 / this.updateMultiplier));
+
+                // 使用时间戳确定更新批次
+                const timeBatch = Math.floor(this.time * 30) % 10;
+                const batchSize = Math.ceil(particleCount / 10);
+                const start = timeBatch * batchSize;
+                const end = Math.min(start + batchSize, particleCount);
+
+                for (let i = start; i < end; i += updateStep) {
+                    const i3 = i * 3;
+                    const i2 = i * 2;
+
+                    const radius = orbitalData[i2];
+                    let angle = orbitalData[i2 + 1];
+
+                    // 根据开普勒定律更新角度
+                    const keplerSpeed = this.particlePhysics.orbitalSpeed /
+                        Math.pow(radius / this.particlePhysics.ringInnerRadius, 1.5);
+
+                    // 混沌影响下的速度调整
+                    const chaosSpeedModifier = 1 - this.chaosIntensity * 0.3;
+                    angle += keplerSpeed * deltaTime * chaosSpeedModifier * (0.9 + layerIndex * 0.05);
+                    orbitalData[i2 + 1] = angle;
+
+                    // 计算目标位置
+                    const targetRadius = radius * this.saturnScale;
+                    const height = originalPositions[i3 + 1] * this.saturnScale;
+
+                    const targetX = targetRadius * Math.cos(angle);
+                    const targetZ = targetRadius * Math.sin(angle);
+
+                    // 平滑过渡到目标位置
+                    const transitionSpeed = this.chaosIntensity > 0 ? 0.08 : 0.04;
+                    positions[i3] += (targetX - positions[i3]) * transitionSpeed;
+                    positions[i3 + 1] += (height - positions[i3 + 1]) * transitionSpeed;
+                    positions[i3 + 2] += (targetZ - positions[i3 + 2]) * transitionSpeed;
+
+                    // 应用混沌效果
+                    if (this.chaosIntensity > 0) {
+                        // 光环扭曲效果
+                        const twist = this.chaosIntensity * this.chaosLevels.turbulence * 0.2;
+                        positions[i3 + 1] += Math.sin(angle * 5 + this.time * 2 + i * 0.01) * twist;
+
+                        // 径向扰动
+                        const radialDisturb = this.chaosIntensity * this.chaosLevels.vortex * 0.3;
+                        const radialNoise = Math.sin(this.time * 3 + i * 0.01);
+                        positions[i3] += radialNoise * radialDisturb;
+                        positions[i3 + 2] += radialNoise * radialDisturb;
+
+                        // 光环扩张/收缩效果
+                        if (this.chaosLevels.explosion > 0 || this.chaosLevels.implosion > 0) {
+                            const expansion = this.chaosLevels.explosion - this.chaosLevels.implosion;
+                            positions[i3] += positions[i3] / targetRadius * expansion * 0.1;
+                            positions[i3 + 2] += positions[i3 + 2] / targetRadius * expansion * 0.1;
+                        }
+
+                        // 高级混沌运动
+                        positions[i3] += velocities[i3] * deltaTime * 15 * this.chaosIntensity;
+                        positions[i3 + 2] += velocities[i3 + 2] * deltaTime * 15 * this.chaosIntensity;
+                    }
+
+                    // 更新颜色脉动
+                    if (i % 100 === 0) {
+                        const pulse = Math.sin(this.time * 1.5 + i * 0.01) * 0.07 + 0.93;
+                        const brightness = this.saturnBrightness * pulse;
+
+                        colors[i3] = Math.min(1, colors[i3] * brightness);
+                        colors[i3 + 1] = Math.min(1, colors[i3 + 1] * brightness);
+                        colors[i3 + 2] = Math.min(1, colors[i3 + 2] * brightness);
+                    }
+                }
+
+                ringParticles.geometry.attributes.position.needsUpdate = true;
+                ringParticles.geometry.attributes.color.needsUpdate = true;
+            }
+
+            updateDynamicCamera(deltaTime) {
+                // 动态相机调整 - 支持超大缩放范围
+
+                // 基础相机距离
+                const baseDistance = 40;
+
+                // 缩放对相机距离的影响 - 非线性关系
+                let cameraDistance;
+                if (this.saturnScale < 1.0) {
+                    // 小缩放时，相机相对较近
+                    cameraDistance = baseDistance / (this.saturnScale * 0.8 + 0.2);
+                } else if (this.saturnScale < 5.0) {
+                    // 中等缩放
+                    cameraDistance = baseDistance / Math.pow(this.saturnScale, 0.5);
+                } else {
+                    // 大缩放时，相机相对较远
+                    cameraDistance = baseDistance / Math.pow(this.saturnScale, 0.3);
+                }
+
+                // 确保相机距离在合理范围内
+                cameraDistance = Math.max(10, Math.min(200, cameraDistance));
+
+                // 目标相机位置
+                const targetCameraZ = cameraDistance;
+
+                // 平滑过渡
+                this.camera.position.z += (targetCameraZ - this.camera.position.z) * 0.05;
+
+                // 相机轻微移动，增加动态感
+                const moveIntensity = 1.0 / Math.max(1, this.saturnScale * 0.3);
+                this.camera.position.x = 25 + Math.sin(this.time * 0.06) * 2.0 * moveIntensity;
+                this.camera.position.y = 15 + Math.sin(this.time * 0.09) * 0.8 * moveIntensity;
+
+                // 使相机始终看向土星中心，大缩放时稍微看向粒子密集区域
+                const lookAtY = this.saturnScale > 8.0 ? -2 : 0;
+                this.camera.lookAt(0, lookAtY, 0);
+            }
+
+            updateMaterialParameters() {
+                // 更新粒子材质亮度
+                const brightnessFactor = this.saturnBrightness;
+                if (this.particles) {
+                    this.particles.material.opacity = Math.min(1, 0.95 * brightnessFactor);
+                }
+
+                // 更新所有环粒子的透明度
+                this.ringParticles.forEach(ring => {
+                    ring.material.opacity = Math.min(1, 0.9 * brightnessFactor);
+                });
+
+                // 轻微旋转整个土星系统
+                const rotationSpeed = 0.0008 * (1 - this.chaosIntensity * 0.3);
+                if (this.particles) {
+                    this.particles.rotation.y += rotationSpeed;
+                }
+                this.ringParticles.forEach(ring => {
+                    ring.rotation.y += rotationSpeed * (1 + ring.geometry.userData.layer * 0.1);
+                });
+            }
+
+            animate() {
+                this.animationId = requestAnimationFrame(() => this.animate());
+
+                // 更新粒子
+                this.updateParticles();
+
+                // 渲染场景
+                this.renderer.render(this.scene, this.camera);
+
+                // 更新FPS计数
+                this.updateFPSCounter();
+            }
+
+            startFPSCounter() {
+                this.lastFrameTime = performance.now();
+                this.frameCount = 0;
+            }
+
+            updateFPSCounter() {
+                this.frameCount++;
+                const currentTime = performance.now();
+
+                if (currentTime >= this.lastFrameTime + 1000) {
+                    this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastFrameTime));
+                    document.getElementById('fps-counter').textContent = this.fps;
+
+                    this.frameCount = 0;
+                    this.lastFrameTime = currentTime;
+                }
+            }
+
+            bindControls() {
+                // 全屏按钮事件
+                document.getElementById('fullscreen-btn').addEventListener('click', () => this.toggleFullscreen());
+
+                // 重置按钮事件
+                document.getElementById('reset-btn').addEventListener('click', () => this.resetSystem());
+
+                // 摄像头按钮事件
+                document.getElementById('camera-btn').addEventListener('click', () => this.toggleCamera());
+
+                // 摄像头开关按钮事件
+                document.getElementById('video-toggle').addEventListener('click', () => this.toggleCamera());
+
+                // 密度滑块事件
+                const densitySlider = document.getElementById('density-slider');
+                densitySlider.addEventListener('input', (e) => {
+                    this.densityMultiplier = e.target.value / 100;
+                    document.getElementById('density-value').textContent = `${e.target.value}%`;
+                    this.applyPerformanceSettings();
+                });
+
+                // 更新速度滑块事件
+                const updateSlider = document.getElementById('update-slider');
+                updateSlider.addEventListener('input', (e) => {
+                    this.updateMultiplier = e.target.value / 100;
+                    document.getElementById('update-value').textContent = `${e.target.value}%`;
+                });
+
+                // 质量滑块事件
+                const qualitySlider = document.getElementById('quality-slider');
+                qualitySlider.addEventListener('input', (e) => {
+                    this.qualityLevel = parseInt(e.target.value);
+                    const qualityText = ['低', '中', '高'][this.qualityLevel - 1];
+                    document.getElementById('quality-value').textContent = qualityText;
+                    this.applyQualitySettings();
+                });
+
+                // 渲染模式切换事件
+                document.getElementById('mode-shader').addEventListener('click', () => this.setRenderMode('shader'));
+                document.getElementById('mode-hybrid').addEventListener('click', () => this.setRenderMode('hybrid'));
+                document.getElementById('mode-optimized').addEventListener('click', () => this.setRenderMode('optimized'));
+
+                // 粒子类型切换事件
+                document.getElementById('type-standard').addEventListener('click', () => this.setParticleType('standard'));
+                document.getElementById('type-glow').addEventListener('click', () => this.setParticleType('glow'));
+                document.getElementById('type-trail').addEventListener('click', () => this.setParticleType('trail'));
+            }
+
+            applyPerformanceSettings() {
+                // 根据密度乘数调整粒子数量
+                this.particleCount = Math.floor(this.baseParticleCount * this.densityMultiplier);
+                this.ringParticleCounts = this.baseRingParticleCounts.map(count =>
+                    Math.floor(count * this.densityMultiplier)
+                );
+
+                // 重新创建粒子系统
+                this.recreateParticleSystem();
+
+                // 更新性能显示
+                this.updatePerformanceDisplay();
+            }
+
+            applyQualitySettings() {
+                // 根据质量级别调整渲染设置
+                switch (this.qualityLevel) {
+                    case 1: // 低
+                        this.renderer.setPixelRatio(1);
+                        this.renderer.antialias = false;
+                        break;
+                    case 2: // 中
+                        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                        this.renderer.antialias = false;
+                        break;
+                    case 3: // 高
+                        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                        this.renderer.antialias = true;
+                        break;
+                }
+            }
+
+            setRenderMode(mode) {
+                this.renderMode = mode;
+
+                // 更新按钮状态
+                document.getElementById('mode-shader').classList.remove('active');
+                document.getElementById('mode-hybrid').classList.remove('active');
+                document.getElementById('mode-optimized').classList.remove('active');
+                document.getElementById(`mode-${mode}`).classList.add('active');
+
+                // 重新创建粒子系统
+                this.recreateParticleSystem();
+            }
+
+            setParticleType(type) {
+                this.particleType = type;
+
+                // 更新按钮状态
+                document.getElementById('type-standard').classList.remove('active');
+                document.getElementById('type-glow').classList.remove('active');
+                document.getElementById('type-trail').classList.remove('active');
+                document.getElementById(`type-${type}`).classList.add('active');
+
+                // 重新创建粒子系统
+                this.recreateParticleSystem();
+            }
+
+            recreateParticleSystem() {
+                // 重新创建粒子系统
+                this.createUltimateSaturnParticleSystem();
+
+                // 更新显示
+                this.calculateTotalParticles();
+                document.getElementById('particle-count').textContent =
+                    this.totalParticles.toLocaleString();
+                document.getElementById('gesture-text').textContent = "粒子系统已更新";
+            }
+
+            updatePerformanceDisplay() {
+                // 更新性能显示
+                this.calculateTotalParticles();
+                document.getElementById('particle-count').textContent =
+                    this.totalParticles.toLocaleString();
+            }
+
+            toggleCamera() {
+                this.cameraEnabled = !this.cameraEnabled;
+                const videoContainer = document.getElementById('video-container');
+                const cameraBtn = document.getElementById('camera-btn');
+
+                if (this.cameraEnabled) {
+                    videoContainer.classList.add('active');
+                    cameraBtn.innerHTML = `
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 1l22 22M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <path d="M9 13a3 3 0 1 0 6 0 3 3 0 0 0-6 0z"></path>
+                            </svg>
+                            关闭摄像头
+                        `;
+                } else {
+                    videoContainer.classList.remove('active');
+                    cameraBtn.innerHTML = `
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            摄像头
+                        `;
+                }
+            }
+
+            onWindowResize() {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+
+                this.renderer.setSize(width, height);
+                this.applyQualitySettings();
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.error(`全屏请求失败: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            resetSystem() {
+                // 重置缩放和状态
+                this.targetScale = 1.0;
+                this.isExploded = false;
+                this.chaosEffect = 0.0;
+                this.chaosIntensity = 0.0;
+                this.autoMode = false;
+
+                // 重置混沌参数
+                this.chaosLevels.turbulence = 0.0;
+                this.chaosLevels.vortex = 0.0;
+                this.chaosLevels.resonance = 0.0;
+                this.chaosLevels.explosion = 0.0;
+                this.chaosLevels.implosion = 0.0;
+                this.chaosLevels.phaseShift = 0.0;
+
+                // 更新手势状态文本
+                document.getElementById('gesture-text').textContent = "系统已重置";
+                document.getElementById('chaos-indicator').classList.remove('active');
+                document.getElementById('chaos-level').textContent = "0%";
+                document.getElementById('scale-value').textContent = "1.0x";
+            }
+
+            // 其他渲染模式的创建方法
+            createShaderBasedParticleSystem() {
+                console.log("创建着色器粒子系统...");
+                this.createOptimizedParticleSystem();
+            }
+
+            createHybridParticleSystem() {
+                console.log("创建混合模式粒子系统...");
+                this.createOptimizedParticleSystem();
+            }
+        }
+
+        // 页面加载完成后初始化应用
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = new UltimateSaturnParticleSystem();
+
+            // 添加全屏变化事件监听
+            document.addEventListener('fullscreenchange', () => {
+                const fullscreenBtn = document.getElementById('fullscreen-btn');
+                if (document.fullscreenElement) {
+                    fullscreenBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 9l6 6m0-6l-6 6M4 4h3a2 2 0 0 1 2 2v3m0 8v3a2 2 0 0 1-2 2H4m16 0h-3a2 2 0 0 1-2-2v-3m0-8V5a2 2 0 0 1 2-2h3"></path>
+                            </svg>退出全屏`;
+                } else {
+                    fullscreenBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                            </svg>全屏沉浸`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
